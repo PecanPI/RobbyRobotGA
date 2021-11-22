@@ -21,24 +21,42 @@ class Robby:
         self.x = x
         self.y = y
         self.size = 10
+        self.fitness = 0
         self.gene = str(np.random.randint(7, size=(243)))
         self.color = BLUE
 
     def move(self, gene, board):
         if gene == 0:
-            self.y -= 1 #up
+            if self.y - 1 > 0:
+                self.y -= 1 
+            else:
+                self.fitness -= 5
         elif gene == 1:
-            self.y += 1 #down
+            if self.y  + 1 < 10:
+                self.y += 1 
+            else:
+                self.fitness -= 5
+           
         elif gene == 2:
-            self.x -= 1 #left
+            if self.x -  1 > 0:
+                self.x -= 1 
+            else:
+                self.fitness -= 5
+           
         elif gene == 3:
-            self.x += 1 #right
+            if self.x  + 1 < 10:
+                self.x += 1 
+            else:
+                self.fitness -= 5
+
         elif gene == 4:
             pass # do nothing
         elif gene == 5:
             #pick up
             if board[self.x][self.y] == 1:
                  board[self.x][self.y] = 0
+            else:
+                self.fitness -= 1
         elif gene == 6:
             #move random direvtion
             self.move(np.random.randint(0,5), board)
@@ -97,7 +115,7 @@ while run:
             run = False
     rob.move(np.random.randint(0,7), board)
     draw(win, board, rob)
-    clock.tick(1)
+    clock.tick(10)
     
 
 pygame.quit()

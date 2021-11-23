@@ -128,6 +128,40 @@ class Board():
         grid = grid.reshape(size, size)
         return grid
 
+def breed(dad, mom):
+    x,y = np.sort(np.random.randint(243, size=(2)))
+    child1 = Robby(0,0,[])
+    child2 = Robby(0,0,[])
+    dad_genome = dad.genome
+    mom_genome = mom.genome
+    child1.genome[:x] = dad_genome[:x] 
+    child1.genome[x:y] = mom_genome[x:y] 
+    child1.genome[y:] =  dad_genome[y:]
+    child2.genome[:x] = mom_genome[:x] 
+    child2.genome[x:y] = dad_genome[x:y] 
+    child2.genome[y:] =  mom_genome[y:]
+    #mutate
+    mutate(child1)
+    mutate(child2)
+    return child1, child2
+
+def mutate(robot):
+    mutate_chance = 0.05
+    for i in range(len(robot.genome)):
+        if np.random.rand < mutate_chance:
+            robot.genome[i] = np.random.randint(7)
+    
+def get_parents(robots):
+    robots = sorted(robots, key=lambda x:x.total_fitness, reverse=True)
+    prob = [x.total_fitness for x in robots[:100]]
+    prob = [i + abs(min(prob)) for i in prob]
+    s = sum(prob)
+    prob = [i/s for i in prob]
+    r=[]
+    r = np.random.choice(robots,100,p=prob)
+    r = sorted(r, key=lambda x:x.total_fitness, reverse=True)
+    return r
+
 
 def draw(win, board, rob):
     win.fill(BLACK)
@@ -156,7 +190,7 @@ clock = pygame.time.Clock()
 population_size = 20
 cleaning_sessions= 5
 boards = [Board(SIZE) for _ in range(cleaning_sessions)]
-robots = [Robby(0,0, boards[0].grid) for _ in range(population_size)]
+robots = [Robby(0,0, []) for _ in range(population_size)]
 
 
 
@@ -181,11 +215,18 @@ for rob in robots:
         
             # clock.tick(30)
                         
+def get_parents(robots):
+    robots = sorted(robots, key=lambda x:x.total_fitness, reverse=True)
+    prob = [x.total_fitness for x in robots[:100]]
+    prob = [i + abs(min(prob)) for i in prob]
+    s = sum(prob)
+    prob = [i/s for i in prob]
+    r=[]
+    r = np.random.choice(robots,100,p=prob)
+    r = sorted(r, key=lambda x:x.total_fitness, reverse=True)
+    return r
 
-# print(rob.moves)
-print("All fitness")
-robots = sorted(robots, key=lambda x:x.total_fitness, reverse=True)
-for rob in robots:
-    print(rob.total_fitness)
+
+# breed(robots[0], robots[1])
 
 pygame.quit()

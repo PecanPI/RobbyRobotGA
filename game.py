@@ -41,22 +41,19 @@ class Robby:
                 self.fitness -= 5
         elif gene == 1:
             if self.y + 1 < 10:
-                self.y += 1
+                self.y += 1    
             else:
                 self.fitness -= 5
-
         elif gene == 2:
             if self.x - 1 >= 0:
-                self.x -= 1
+                self.x -= 1 
             else:
                 self.fitness -= 5
-
         elif gene == 3:
             if self.x + 1 < 10:
                 self.x += 1
             else:
                 self.fitness -= 5
-
         elif gene == 4:
             pass
         elif gene == 5:
@@ -69,7 +66,7 @@ class Robby:
         elif gene == 6:
             # move random direction
             self.moves += 1
-            self.move(np.random.randint(0, 5))
+            self.move(np.random.randint(0, 4))
         self.moves -= 1
 
     def find_move(self):
@@ -138,25 +135,24 @@ class Board():
         grid = grid.reshape(size, size).astype(int)
         return grid
 
-
+#breed given two robots returns two robots with crossover'd and mutated genomes
 def breed(dad, mom):
-    x = np.sort(np.random.randint(162, size=(1)))
+    x = np.random.randint(162, size=(1))[0]
     child1 = Robby(0, 0, [])
     child2 = Robby(0, 0, [])
-    dad_genome = dad.genome
-    mom_genome = mom.genome
-    child1.genome[:x] = dad_genome[:x]
-    child1.genome[x:] = mom_genome[x:]
-    child2.genome[:x] = mom_genome[:x]
-    child2.genome[x:] = dad_genome[x:]
+    child1.genome[:x] = dad.genome[:x]
+    child1.genome[x:] = mom.genome[x:]
+    child2.genome[:x] = mom.genome[:x]
+    child2.genome[x:] = dad.genome[x:]
     # mutate
     child1 = mutate(child1)
     child2 = mutate(child2)
     return [child1, child2]
 
-
+#mutates given robot genome.
+#mutate chance of 0.01 = 1% chance to mutate
 def mutate(robot):
-    mutate_chance = 0.05
+    mutate_chance = 0.01
     for i in range(len(robot.genome)):
         if np.random.rand() < mutate_chance:
             robot.genome[i] = np.random.randint(7)
@@ -165,20 +161,34 @@ def mutate(robot):
 
 def get_parents(robots):
  #Weighted Choice
-        # prob = [x.total_fitness for x in robots[:len(robots)]]
-        # prob = [i + abs(min(prob)) for i in prob]
-        # s = sum(prob)
-        # prob = [i/s for i in prob]
-        # r = []
-        # r = np.random.choice(robots, len(robots), p=prob)
-    r = robots.copy()
-    np.random.shuffle(r)
+    prob = [x.total_fitness for x in robots]
+    #prob = [i for i in range(-50,50)]
+    min_prob = min(min(prob), 0)
+    #shift negative numbers
+    shifted_prob = [i + abs(min_prob) for i in prob]
+    #normalize
+    sum_fit = sum(shifted_prob)
+    norm_sum = [ float(i)/sum_fit for i  in shifted_prob]
+    r = np.random.choice(robots, len(robots), p=norm_sum)
+ #Random Chance, simpler parent selection
+    # r = robots.copy()
+    # np.random.shuffle(r)
     return r
 
+#write writes stats to file and to terminal
+def write(gen, highest_fit, avg_fit, genome):
+    f = open("gen.txt", "a")
+    f.write(f"Highest Fitness of gen {gen + 1} is {highest_fit}\n")
+    f.write(f"Average Fitness is {avg_fit}\n")
+    f.write(f"The best genome is :\n {genome}\n\n")
+    print(f"Highest Fitness of gen {gen + 1} is {highest_fit}")
+    print(f"Average Fitness is {avg_fit}")
+    print(f"The best genome is :\n {genome}\n\n")
 
+
+#draw, takes in pygame window, board, and robot
 def draw(win, board, rob):
     win.fill(BLACK)
-
     for x in range(len(board)):
         for y in range(len(board[x])):
             if board[x][y] == 1:
@@ -196,32 +206,25 @@ def draw(win, board, rob):
     win.blit(text, (10,WIN_HEIGHT+40  ))
     text = STAT_FONT.render("total fitness: "+str(rob.total_fitness), 1, (255, 255, 255))
     win.blit(text, (10,WIN_HEIGHT+60  ))
-
     pygame.display.update()
 
 if __name__ == "__main__":
     generations = 1000
     population_size = 200  # must be even
     cleaning_sessions = 100
-    
+    #intialize population with random genes
     robots = [Robby(1, 1, []) for _ in range(population_size)]
     run = True
+    f = open('gen.txt', "w")
 
-    f = open('gen.txt', "x")
-    f.close()
     avg_fit = []
     highest_fit = []
-
-    # pygame.init()
-    # WINDOW_SIZE = [WIN_WIDTH, WIN_HEIGHT + 100]
-    # win = pygame.display.set_mode(WINDOW_SIZE)
-    # pygame.display.set_caption('Robby')
-
-    # clock = pygame.time.Clock()
-
+    #run sim for generations
     for gen in range(generations):
+        #generate random amount of boards
         boards = [Board(SIZE) for _ in range(cleaning_sessions)]
         for rob in robots:
+            rob.total_fitness = 0
             for board in boards:
                 rob.board = board.grid.copy()
                 rob.x, rob.y = 0,0
@@ -238,31 +241,26 @@ if __name__ == "__main__":
             rob.total_fitness /= cleaning_sessions
 
         new_pop = []
-
+        #sort robots by total fitness,
         robots = sorted(robots, key=lambda x: x.total_fitness, reverse=True)
+        
+        #new_pop.append([np.array(r).ravel() for r in robots[:(int(len(robots)/2))]])
         avg_fit.append(sum([i.total_fitness for i in robots]) / len(robots))
         highest_fit.append(robots[0].total_fitness)
-        f = open("gen.txt", "a")
-        f.write(f"Highest Fitness of gen {gen + 1} is {highest_fit[-1]}\n")
-        f.write(f"Average Fitness is {avg_fit[-1]}\n")
-        f.write(f"The best genome is :\n {robots[0].genome}\n\n")
-        f.close()
-        print(f"Highest Fitness of gen {gen + 1} is {highest_fit[-1]}")
-        print(f"Average Fitness is {avg_fit[-1]}")
-        print(f"The best genome is :\n {robots[0].genome}\n\n")
-        
-        parents = get_parents(robots[:int(population_size/2)].copy())
-    
 
+        write(gen, highest_fit[-1], avg_fit[-1], robots[0].genome)
+        #get two lists of half the population size out of top 50% performing robots, the rest perish
+        parents1 = get_parents(robots[:int(population_size/2)].copy())
+        parents2 = get_parents(robots[:int(population_size/2)].copy())
+    
         for i in range(int(population_size/2)):
-            new_pop.append(breed(robots[i], parents[i]))
-        robots = np.array(new_pop).ravel()
-        
-    f.open("gen.txt", 'a')
+            new_pop.append(breed(parents1[i], parents2[i]))
+        new_pop = np.array(new_pop).ravel()
+        #new_pop[175:] = robots[:25]
+        robots = new_pop
     f.write(f"highest_fit: {highest_fit}")
     f.write(f"avg: {avg_fit}")
-
-
+    f.close()
 
     pygame.quit()
     # breed(robots[0], robots[1])

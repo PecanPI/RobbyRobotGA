@@ -32,29 +32,34 @@ class Robby:
         self.total_fitness = 0
         self.genome = np.random.randint(7, size=(243))
         self.color = BLUE
-
+    #move moves robby based on the passed gene
     def move(self, gene):
         if gene == 0:
+            #up
             if self.y - 1 >= 0:
                 self.y -= 1
             else:
                 self.fitness -= 5
         elif gene == 1:
+            #down
             if self.y + 1 < 10:
                 self.y += 1    
             else:
                 self.fitness -= 5
         elif gene == 2:
+            #left
             if self.x - 1 >= 0:
                 self.x -= 1 
             else:
                 self.fitness -= 5
         elif gene == 3:
+            # right
             if self.x + 1 < 10:
                 self.x += 1
             else:
                 self.fitness -= 5
         elif gene == 4:
+            #do nothing
             pass
         elif gene == 5:
             # pick up
@@ -69,6 +74,8 @@ class Robby:
             self.move(np.random.randint(0, 4))
         self.moves -= 1
 
+    #find_move finds a move using the current board state and calculates the gene postion
+    #returns gene
     def find_move(self):
         # up * 3^0 + down * 3^1 + left *3^2 + right * 3^3 + cur * 3^4 = index of gene
         # empty = 0, can = 1, wall = 2
@@ -116,7 +123,7 @@ class Robby:
                          self.y * (HEIGHT + MARGIN) + MARGIN + self.size/2,
                          self.size, self.size))
 
-
+#Board creates a square board of specified size
 class Board():
 
     def __init__(self, size):
@@ -176,8 +183,7 @@ def get_parents(robots):
     return r
 
 #write writes stats to file and to terminal
-def write(gen, highest_fit, avg_fit, genome):
-    f = open("gen0.01.txt", "a")
+def write(f, gen, highest_fit, avg_fit, genome):
     f.write(f"Highest Fitness of gen {gen + 1} is {highest_fit}\n")
     f.write(f"Average Fitness is {avg_fit}\n")
     f.write(f"The best genome is :\n {genome}\n\n")
@@ -198,61 +204,60 @@ def draw(win, board, rob):
             pygame.draw.rect(win, color, ((y * (WIDTH + MARGIN)) + MARGIN,
                                           (x*(HEIGHT + MARGIN))+MARGIN, WIDTH, HEIGHT))
     rob.draw(win)
-    text = STAT_FONT.render("fitness: "+str(rob.fitness), 1, (255, 255, 255))
+    text = STAT_FONT.render("Fitness: "+str(rob.fitness), 1, (255, 255, 255))
     win.blit(text, (10,WIN_HEIGHT-5  ))
-    text = STAT_FONT.render("moves left: "+str(rob.moves), 1, (255, 255, 255))
+    text = STAT_FONT.render("Moves left: "+str(rob.moves), 1, (255, 255, 255))
     win.blit(text, (10,WIN_HEIGHT+20  ))
-    text = STAT_FONT.render("move: "+str(rob.find_move()), 1, (255, 255, 255))
+    text = STAT_FONT.render("Move: "+str(rob.find_move()), 1, (255, 255, 255))
     win.blit(text, (10,WIN_HEIGHT+40  ))
-    text = STAT_FONT.render("total fitness: "+str(rob.total_fitness), 1, (255, 255, 255))
+    text = STAT_FONT.render("Total fitness: "+str(rob.total_fitness), 1, (255, 255, 255))
     win.blit(text, (10,WIN_HEIGHT+60  ))
     pygame.display.update()
 
 if __name__ == "__main__":
     generations = 1000
     population_size = 200  # must be even
-    cleaning_sessions = 100
+    cleaning_sessions = 100 # number of boards
     #intialize population with random genes
     robots = [Robby(1, 1, []) for _ in range(population_size)]
     run = True
-    f = open('gen0.001.txt', "w")
+    f = open('gen.txt', "w")
 
     avg_fit = []
     highest_fit = []
     #run sim for generations
     for gen in range(generations):
-        #generate random amount of boards
+        #generate random boards of cleaning_session size
         boards = [Board(SIZE) for _ in range(cleaning_sessions)]
         for rob in robots:
             rob.total_fitness = 0
             for board in boards:
+                #reset robot and pass in a new board
                 rob.board = board.grid.copy()
                 rob.x, rob.y = 0,0
                 rob.fitness = 0
                 rob.moves = 200
-                #
                 run = True
                 while run:
                     if rob.moves > 0:
                         rob.move(rob.find_move())
                     else:
                         run = False
+                #calculate total fitness over the cleaning sessions
                 rob.total_fitness += rob.fitness
             rob.total_fitness /= cleaning_sessions
-
+        #Generate a new population of robots based on current gen
         new_pop = []
         #sort robots by total fitness,
         robots = sorted(robots, key=lambda x: x.total_fitness, reverse=True)
-        
-        #new_pop.append([np.array(r).ravel() for r in robots[:(int(len(robots)/2))]])
+        #save highest fit and average fit of each generation, this gets writtin to file once sim is complete
         avg_fit.append(sum([i.total_fitness for i in robots]) / len(robots))
         highest_fit.append(robots[0].total_fitness)
-
-        write(gen, highest_fit[-1], avg_fit[-1], robots[0].genome)
+        write(f, gen, highest_fit[-1], avg_fit[-1], robots[0].genome)
         #get two lists of half the population size out of top 50% performing robots, the rest perish
         parents1 = get_parents(robots[:int(population_size/2)].copy())
         parents2 = get_parents(robots[:int(population_size/2)].copy())
-    
+        #Loop to create new population
         for i in range(int(population_size/2)):
             #one weighted choice, one per rank
             # new_pop.append(breed(robots[i], parents1[i]))

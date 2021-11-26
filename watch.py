@@ -58,15 +58,18 @@ clock = pygame.time.Clock()
 
 
 run = True
+start = False
 while run:
-    clock.tick(15)
+    clock.tick(5)
+    draw(win, rob.board, rob)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
-        # if event.type == pygame.KEYDOWN:
-        #     if event.key == pygame.K_SPACE:
-        #         rob.move(5)
+        if event.type == pygame.KEYDOWN:
+            
+            if event.key == pygame.K_SPACE:
+                start=True
         #     if event.key == pygame.K_t:
         #         rob.move(4)
         #     if event.key == pygame.K_RIGHT:
@@ -79,9 +82,9 @@ while run:
         #         rob.move(0)
         #     if event.key == pygame.K_r:
         #         rob.move(6)
-    if rob.moves > 0:
+    if rob.moves > 0 and start:
         rob.move(rob.find_move())
-        draw(win, rob.board, rob)
+        #draw(win, rob.board, rob)
     else:
         pass
 

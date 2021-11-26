@@ -152,7 +152,7 @@ def breed(dad, mom):
 #mutates given robot genome.
 #mutate chance of 0.01 = 1% chance to mutate
 def mutate(robot):
-    mutate_chance = 0.01
+    mutate_chance = 0.001
     for i in range(len(robot.genome)):
         if np.random.rand() < mutate_chance:
             robot.genome[i] = np.random.randint(7)
@@ -177,7 +177,7 @@ def get_parents(robots):
 
 #write writes stats to file and to terminal
 def write(gen, highest_fit, avg_fit, genome):
-    f = open("gen.txt", "a")
+    f = open("gen0.01.txt", "a")
     f.write(f"Highest Fitness of gen {gen + 1} is {highest_fit}\n")
     f.write(f"Average Fitness is {avg_fit}\n")
     f.write(f"The best genome is :\n {genome}\n\n")
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     #intialize population with random genes
     robots = [Robby(1, 1, []) for _ in range(population_size)]
     run = True
-    f = open('gen.txt', "w")
+    f = open('gen0.001.txt', "w")
 
     avg_fit = []
     highest_fit = []
@@ -254,6 +254,9 @@ if __name__ == "__main__":
         parents2 = get_parents(robots[:int(population_size/2)].copy())
     
         for i in range(int(population_size/2)):
+            #one weighted choice, one per rank
+            # new_pop.append(breed(robots[i], parents1[i]))
+            #two weighted choice parents
             new_pop.append(breed(parents1[i], parents2[i]))
         new_pop = np.array(new_pop).ravel()
         #new_pop[175:] = robots[:25]
